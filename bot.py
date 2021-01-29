@@ -38,10 +38,8 @@ from ass import Ui_Assistant
 
 
 global data
-
 with open("intents.json") as file:
     data = json.load(file)
-
 
 try:
     
@@ -267,18 +265,22 @@ class MainThread(QThread):
                     continue  
     
     def chat(self):
-        print(data)
+        
+        with open("intents.json") as file:
+            data = json.load(file)
+        
         obj = Inputs()
         obj1 = AlarmThread()
         wake = "activate"
         
         while True:
 
-            alarm_keywords = ['stop alarm','stop','ok','shut it','shut up','stop it']
+            
             print("speak")
             active = self.take_input().lower()
+            
+            #active = "activate"
             print(active)
-
                 
             if active.count(wake) > 0:
                 if os.path.exists("initial.txt"):
@@ -296,6 +298,7 @@ class MainThread(QThread):
                 #self.speak_s("Start talking with the bot (type quit to stop)!")
 
                 inp = obj.take_input() 
+                #inp = "wake me up in 10 seconds"
                 print(inp)
 
                 if inp.lower() == "quit":
@@ -303,13 +306,7 @@ class MainThread(QThread):
 
                 if 'alarm'  in inp.lower() or 'wake' in inp.lower():
 
-                    """
-                            tomorrow at 2:30 pm - [tomorrow, 2:30 p.m.]
-                            tomorrow at 5:00 am - [tomorrow, 5 a.m.]
-                            at 5:00 am on monday - [5 a.m., Monday]
-                            wake me up in 4hours - [4 hours]
-                            wake me today at 9pm - [today, 9 p.m.]
-                    """
+                    
                     next_days = ['today','tomorrow']
 
                     nlp = spacy.load('en_core_web_sm')
@@ -332,10 +329,19 @@ class MainThread(QThread):
 
                             data = '{} {}\n'.format(formatted_day,formatted_time)
                         
-                        else:
+                        elif inp_split[1].lower()=="minutes":
                             
                             print(inp_split)
                             day_after_adding = datetime.now() + timedelta(minutes=int(inp_split[0]))
+                            formatted_time = '{:%H:%M %p}'.format(day_after_adding)
+                            formatted_day = '{:%d-%m-%Y}'.format(day_after_adding)
+
+                            data = '{} {}\n'.format(formatted_day,formatted_time)
+                        
+                        elif inp_split[1].lower()=="seconds":
+                            
+                            print(inp_split)
+                            day_after_adding = datetime.now() + timedelta(seconds=int(inp_split[0]))
                             formatted_time = '{:%H:%M %p}'.format(day_after_adding)
                             formatted_day = '{:%d-%m-%Y}'.format(day_after_adding)
 
@@ -366,7 +372,8 @@ class MainThread(QThread):
                     self.speak_s("Total deaths are "+"{:,}".format(d['deaths']))
                     self.speak_s("Total recovered cases are "+"{:,}".format(d['recovered']))
                 
-                
+                elif 'medication' in inp.lower() or "schedule" in inp.lower() or 'medicine' in inp.lower():
+                    
 
                 else:
                     results = model.predict([bag_of_words(inp, words)])
@@ -376,7 +383,7 @@ class MainThread(QThread):
                     for tg in data["intents"]:
                         if tg['intent'] == tag:
                             responses = tg['responses']
-                    if responses in ["See you later","Have a nice day","Bye! Come back again soon."]:
+                    if responses in ["See you later","Have a nice day","Bye! `Come` back again soon."]:
                         os.remove('initial.txt')
                     self.speak_s(random.choice(responses))
                 
