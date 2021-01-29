@@ -37,7 +37,7 @@ from ass import Ui_Assistant
 
 
 
-
+global data
 
 with open("intents.json") as file:
     data = json.load(file)
@@ -132,6 +132,8 @@ def bag_of_words(s, words):
             
     return numpy.array(bag)
 
+
+
 class Inputs(QMainWindow):
 
     def __init__(self):
@@ -166,7 +168,7 @@ class Inputs(QMainWindow):
                     self.speak_s("I dont understand that")
                     continue
 
-        
+ 
 class AlarmThread(QThread):
 
     def __init__(self):
@@ -265,7 +267,7 @@ class MainThread(QThread):
                     continue  
     
     def chat(self):
-
+        print(data)
         obj = Inputs()
         obj1 = AlarmThread()
         wake = "activate"
@@ -370,7 +372,7 @@ class MainThread(QThread):
                     results = model.predict([bag_of_words(inp, words)])
                     results_index = numpy.argmax(results)
                     tag = labels[results_index]
-
+                    
                     for tg in data["intents"]:
                         if tg['intent'] == tag:
                             responses = tg['responses']
