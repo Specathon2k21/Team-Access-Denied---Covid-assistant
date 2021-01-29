@@ -3,6 +3,7 @@ from nltk.stem.lancaster import LancasterStemmer
 stemmer = LancasterStemmer()
 
 import sys
+import requests
 import random
 import tflearn
 from tensorflow.python.framework import ops
@@ -231,6 +232,63 @@ class AlarmThread(QThread):
 
 
 
+class MedThread(QThread):
+
+    def __init__(self):
+        super(MedThread,self).__init__()
+    
+    def run(self):
+        self.check()
+
+    def ta_input(self):
+        
+        r = sr.Recognizer()
+
+        with sr.Microphone() as source:
+            
+            try:
+                print("med input")
+                r.adjust_for_ambient_noise(source)
+                audio = r.listen(source)
+                string = r.recognize_google(audio)
+                return string
+            except:
+                return "no"
+
+    def check(self):
+        obj = Inputs()
+        with open("medication.txt","r") as med:
+            meds = med.readlines()
+        
+        if len(meds)>0:
+            for i in range(len(meds)):
+                meds[i] = meds[i].replace("\n",'')
+        
+        if len(meds)>0:
+          
+            while True:
+                curr_obj = datetime.now()
+                curr_time = '{:%I:%M %p}'.format(curr_obj)
+                for i in meds:
+                    
+                    if str(i) in curr_time:
+                        fs,data = wavfile.read('medit.wav')
+                        tm = str(i).split(':')[1].replace('AM','').replace('PM','')
+                        for i in range(5):
+                            curr_min = datetime.now().minute
+                            sounddevice.play(data,fs)
+                            ala_inp = self.ta_input().lower()
+                            if ala_inp == 'stop' or ala_inp=="shut up" or ala_inp=="ok" :
+                                obj.speak_s("ok mahesh")
+                                sounddevice.stop()
+                                break
+                    print(curr_time)
+
+                    time.sleep(10)
+            
+
+        
+
 class MainThread(QThread):
 
     def __init__(self):
@@ -298,7 +356,7 @@ class MainThread(QThread):
                 #self.speak_s("Start talking with the bot (type quit to stop)!")
 
                 inp = obj.take_input() 
-                #inp = "wake me up in 10 seconds"
+                #inp = "vitamin c tablet at 9 am"
                 print(inp)
 
                 if inp.lower() == "quit":
@@ -353,16 +411,13 @@ class MainThread(QThread):
                         
 
 
-                        
-                    
-                    
-
+                
                 elif "future" in inp.lower() or 'prediction' in inp.lower():
                     self.speak_s("How many days :")
                     days = self.take_input()
                     print(days)
 
-                    days = re.findall(r'\d+', days) 
+                    days = re.findall(r'\d+', days)
                     value = track_covid(int(days[0]))
                     self.speak_s("There is a high chance of covid cases to increase ,to be accurate the cases would be "+"{:,} by {} days".format(value,days))
 
@@ -372,8 +427,54 @@ class MainThread(QThread):
                     self.speak_s("Total deaths are "+"{:,}".format(d['deaths']))
                     self.speak_s("Total recovered cases are "+"{:,}".format(d['recovered']))
                 
+                elif 'play music' in inp.lower() :
+                    fs,data = wavfile.read('go.wav')                    
+                    sounddevice.play(data,fs)
+                    while True:
+                        ala_inp = self.take_input().lower()
+                        print(ala_inp)
+                        if ala_inp == 'top' or ala_inp == 'stop' or ala_inp=="shut up" or ala_inp=="ok" :
+                            obj.speak_s("ok mahesh")
+                            sounddevice.stop()
+                            break
+
+                
                 elif 'medication' in inp.lower() or "schedule" in inp.lower() or 'medicine' in inp.lower():
                     
+                    nlp = spacy.load('en_core_web_sm')
+                    doc = nlp(inp.lower())
+                    entities = []
+                    for ent in doc.ents:
+                        entities.append(ent)
+                    
+                    
+                    s_time = str(entities[0]).replace(".","")
+                    ap = ''
+                    indx = -1
+                    for i in range(len(s_time)):
+                        if s_time[i].isalpha():
+                            indx = i
+                            break
+                    
+                    time = s_time[:indx]+s_time[indx:].upper()
+
+                   
+                    
+                    with open("medication.txt",'a') as med:
+                        med.write(time+"\n")
+                    
+                    self.speak_s("Medication time has been recorded")
+
+                elif 'temperature' in inp.lower() or 'weather' in inp.lower() or "weather report" :
+                    self.speak_s("which city's weather would you like to know?")
+                    city = self.take_input()
+
+                    api = "http://api.openweathermap.org/data/2.5/weather?q={}&appid=bd403e5f29e5d5809fe3b267b948ed09".format(city)
+                    api_res = requests.get(api)
+                    json_obj = json.loads(api_res.text)
+                    tempk = int(json_obj['main']['temp'])
+                    tempC = tempk-273.15
+                    self.speak_s("Weather in {} right now is {} degree celsius".format(city,tempc))
 
                 else:
                     results = model.predict([bag_of_words(inp, words)])
@@ -392,6 +493,7 @@ class MainThread(QThread):
 
 startExecution = MainThread()
 alarm = AlarmThread()
+med = MedThread()
 
 
 class Main(QMainWindow):
@@ -413,6 +515,7 @@ class Main(QMainWindow):
        
         startExecution.start()
         alarm.start()
+        med.start()
 
 
     def change_text(self):

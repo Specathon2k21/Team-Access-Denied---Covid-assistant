@@ -1,6 +1,32 @@
 {
     "intents": [
       {
+            "intent": "query",
+            "text": [
+                  "what can you do",
+                  "what else do you do",
+                  "what are your features"
+                  
+            ],
+            "responses": [
+                  "I do a lot of things,like covid cases,i can teach you yoga and also make you laugh"
+                  
+            
+            ],
+            "extension":  {
+                  "function": "",
+                  "entities": false,
+                  "responses": []
+            },
+            "context":  {
+                  "in": "",
+                  "out": "DontWorry",
+                  "clear": false
+            },
+            "entityType": "NA",
+            "entities": []
+      },
+      {
             "intent": "lonely",
             "text": [
                   "i feel lonely",

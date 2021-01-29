@@ -1,13 +1,9 @@
-from scipy.io import wavfile  
+import spacy
 
+nlp = spacy.load('en_core_web_sm')
+doc = nlp("i need a vitamin c tablet at 9 am")
 
-fs,data = wavfile.read('alarm.wav')
-
-for i in range(10): 
-    
-    if i==5:
-        sounddevice.stop()
-    else:
-        sounddevice.play(data,fs)
-        time.sleep(1)
-        
+entities = []
+for ent in doc.ents:
+    entities.append(ent)
+print(entities)
